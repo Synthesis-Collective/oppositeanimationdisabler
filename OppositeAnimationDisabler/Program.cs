@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
@@ -10,28 +11,26 @@ namespace OppositeAnimationDisabler
 {
     public class Program
     {
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
-            return SynthesisPipeline.Instance.Patch<ISkyrimMod, ISkyrimModGetter>(
-                args: args,
-                patcher: RunPatch,
-                new UserPreferences()
+            return await SynthesisPipeline.Instance
+                .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
+                .Run(args, new RunPreferences()
                 {
                     ActionsForEmptyArgs = new RunDefaultPatcher()
                     {
                         IdentifyingModKey = "OppositeAnimationDisabler.esp",
-                        TargetRelease = GameRelease.SkyrimSE
+                        TargetRelease = GameRelease.SkyrimSE,
                     }
-                }
-            );
+                });
         }
 
-        public static void RunPatch(SynthesisState<ISkyrimMod, ISkyrimModGetter> state)
+        public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-            foreach (var npc in state.LoadOrder.PriorityOrder.WinningOverrides<INpcGetter>())
+            foreach (var npc in state.LoadOrder.PriorityOrder.WinningOverrides<INpcGetter>().
+                Where(candidate => candidate.Configuration.Flags.HasFlag(NpcConfiguration.Flag.OppositeGenderAnims)))
             {
-                if (!npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.OppositeGenderAnims)) continue;
-
+                Console.WriteLine("Unflag NPC {0}", npc.EditorID);
                 var modifiedNPc = state.PatchMod.Npcs.GetOrAddAsOverride(npc);
                 modifiedNPc.Configuration.Flags &= ~NpcConfiguration.Flag.OppositeGenderAnims;
             }
