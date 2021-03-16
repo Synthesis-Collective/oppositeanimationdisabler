@@ -20,7 +20,7 @@ namespace OppositeAnimationDisabler
                     ActionsForEmptyArgs = new RunDefaultPatcher()
                     {
                         IdentifyingModKey = "OppositeAnimationDisabler.esp",
-                        TargetRelease = GameRelease.SkyrimSE,
+                        TargetRelease = GameRelease.SkyrimSE
                     }
                 });
         }
