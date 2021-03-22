@@ -5,30 +5,23 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Skyrim;
 using Noggog;
+using System.Threading.Tasks;
 
 namespace OppositeAnimationDisabler
 {
     public class Program
     {
-        public static int Main(string[] args)
+        public static Task<int> Main(string[] args)
         {
-            return SynthesisPipeline.Instance.Patch<ISkyrimMod, ISkyrimModGetter>(
-                args: args,
-                patcher: RunPatch,
-                new UserPreferences()
-                {
-                    ActionsForEmptyArgs = new RunDefaultPatcher()
-                    {
-                        IdentifyingModKey = "OppositeAnimationDisabler.esp",
-                        TargetRelease = GameRelease.SkyrimSE
-                    }
-                }
-            );
+            return SynthesisPipeline.Instance
+                .SetTypicalOpen(GameRelease.SkyrimSE, "OppositeAnimationDisabler.esp")
+                .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
+                .Run(args);
         }
 
-        public static void RunPatch(SynthesisState<ISkyrimMod, ISkyrimModGetter> state)
+        public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-            foreach (var npc in state.LoadOrder.PriorityOrder.WinningOverrides<INpcGetter>())
+            foreach (var npc in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
                 if (!npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.OppositeGenderAnims)) continue;
 
